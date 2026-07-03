@@ -1,0 +1,22 @@
+services:
+  todo-backend:
+    build: ./server
+    container_name: todo-backend
+    restart: always
+    networks:
+      - app-network
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./server/.env
+  
+
+  todo-frontend:
+    build: ./client
+    container_name: todo-frontend
+    restart: always
+    ports:
+      - "5173:5173"
+    depends_on:
+      - todo-backend
+    

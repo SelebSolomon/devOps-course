@@ -1,0 +1,49 @@
+name: build-and-lint
+
+
+# this will define when the workflow will run
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+# this will define the jobs that will run as part of the workflow
+jobs:
+  build-and-lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 24
+
+      - name: Install backend dependencies
+        run: npm install
+        working-directory: ./server
+
+      - name: Run linting
+        run: npm run lint
+        working-directory: ./server
+
+      - name: Run formatting check
+        run: npm run format -- --check
+        working-directory: ./server
+
+      - name: Install frontend dependencies
+        run: npm install
+        working-directory: ./client
+
+      - name: Run frontend linting
+        run: npm run lint
+        working-directory: ./client
+
+      - name: Build backend images
+        run: docker build -t todo-backend ./server
+
+      - name: Build frontend images
+        run: docker build -t todo-frontend ./client

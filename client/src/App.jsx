@@ -1,0 +1,188 @@
+import { useEffect, useRef, useState } from "react";
+import axios from "axios";
+import { AnimatePresence, motion } from "framer-motion";
+import "./App.css";
+
+const API_URL = "http://localhost:5000/api/todos";
+
+function App() {
+  const [todos, setTodos] = useState([]);
+  const [text, setText] = useState("");
+  const [loading, setLoading] = useState(true);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    let ignore = false;
+
+    axios.get(API_URL).then((res) => {
+      if (ignore) return;
+      setTodos(res.data);
+      setLoading(false);
+    });
+
+    inputRef.current?.focus();
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  const addTodo = async (e) => {
+    e.preventDefault();
+    if (!text.trim()) return;
+    const res = await axios.post(API_URL, { text });
+    setTodos([res.data, ...todos]);
+    setText("");
+    inputRef.current?.focus();
+  };
+
+  const toggleTodo = async (todo) => {
+    const res = await axios.put(`${API_URL}/${todo._id}`, {
+      completed: !todo.completed,
+    });
+    setTodos(todos.map((t) => (t._id === res.data._id ? res.data : t)));
+  };
+
+  const deleteTodo = async (id) => {
+    await axios.delete(`${API_URL}/${id}`);
+    setTodos(todos.filter((t) => t._id !== id));
+  };
+
+  const remaining = todos.filter((t) => !t.completed).length;
+  const progress = todos.length ? (todos.length - remaining) / todos.length : 0;
+
+  return (
+    <div className="page">
+      <motion.div
+        className="app"
+        initial={{ opacity: 0, y: 24, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+      >
+        <header className="app-header">
+          <motion.h1
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1, duration: 0.4 }}
+          >
+            Todo List
+          </motion.h1>
+
+          <AnimatePresence mode="wait">
+            {!loading && todos.length > 0 && (
+              <motion.p
+                key={remaining === 0 ? "done" : "remaining"}
+                className="subtitle"
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 6 }}
+                transition={{ duration: 0.25 }}
+              >
+                {remaining === 0
+                  ? "All done! 🎉"
+                  : `${remaining} of ${todos.length} remaining`}
+              </motion.p>
+            )}
+          </AnimatePresence>
+
+          {todos.length > 0 && (
+            <div className="progress-track">
+              <motion.div
+                className="progress-fill"
+                animate={{ width: `${progress * 100}%` }}
+                transition={{ duration: 0.4, ease: "easeOut" }}
+              />
+            </div>
+          )}
+        </header>
+
+        <form onSubmit={addTodo} className="todo-form">
+          <input
+            ref={inputRef}
+            type="text"
+            placeholder="What needs to be done?"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+          />
+          <motion.button
+            type="submit"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            Add
+          </motion.button>
+        </form>
+
+        {loading ? (
+          <p className="empty-state">Loading...</p>
+        ) : (
+          <AnimatePresence>
+            {todos.length === 0 ? (
+              <motion.div
+                key="empty"
+                className="empty-state"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+              >
+                <motion.span
+                  className="empty-icon"
+                  animate={{ y: [0, -8, 0] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                >
+                  📝
+                </motion.span>
+                <p>No todos yet. Add one above!</p>
+              </motion.div>
+            ) : (
+              <motion.ul layout className="todo-list">
+                <AnimatePresence>
+                  {todos.map((todo) => (
+                    <motion.li
+                      key={todo._id}
+                      layout
+                      initial={{ opacity: 0, x: -30, scale: 0.9 }}
+                      animate={{ opacity: 1, x: 0, scale: 1 }}
+                      exit={{ opacity: 0, x: 30, scale: 0.9 }}
+                      transition={{ duration: 0.25, ease: "easeOut" }}
+                      className={todo.completed ? "completed" : ""}
+                    >
+                      <label className="todo-check">
+                        <input
+                          type="checkbox"
+                          checked={todo.completed}
+                          onChange={() => toggleTodo(todo)}
+                        />
+                        <motion.span
+                          className="checkmark"
+                          animate={
+                            todo.completed
+                              ? { scale: [1, 1.3, 1] }
+                              : { scale: 1 }
+                          }
+                          transition={{ duration: 0.3 }}
+                        />
+                      </label>
+                      <span className="todo-text">{todo.text}</span>
+                      <motion.button
+                        className="delete-btn"
+                        onClick={() => deleteTodo(todo._id)}
+                        aria-label="Delete todo"
+                        whileHover={{ scale: 1.15 }}
+                        whileTap={{ scale: 0.9 }}
+                      >
+                        ✕
+                      </motion.button>
+                    </motion.li>
+                  ))}
+                </AnimatePresence>
+              </motion.ul>
+            )}
+          </AnimatePresence>
+        )}
+      </motion.div>
+    </div>
+  );
+}
+
+export default App;
