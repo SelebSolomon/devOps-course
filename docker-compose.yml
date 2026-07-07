@@ -3,8 +3,8 @@ services:
     build: ./server
     container_name: todo-backend
     restart: always
-    networks:
-      - app-network
+    # networks:
+    #   - app-network
     ports:
       - "5000:5000"
     env_file:

@@ -14,6 +14,7 @@ exports.createTodo = async (req, res) => {
   res.status(201).json(todo);
 };
 
+
 exports.updateTodo = async (req, res) => {
   const todo = await Todo.findByIdAndUpdate(req.params.id, req.body, {
     new: true,
