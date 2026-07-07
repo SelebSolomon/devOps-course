@@ -9,7 +9,7 @@
     "lint": "oxlint && eslint .",
     "format": "prettier --write .",
     "lint:fix": "eslint . --ext .js --fix",
-    "preview": "vite preview --host --port 5173"
+    "preview": "vite preview --host 0.0.0.0 --port 5173"
   },
   "dependencies": {
     "axios": "^1.18.1",
