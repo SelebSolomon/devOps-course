@@ -3,7 +3,8 @@ import axios from "axios";
 import { AnimatePresence, motion } from "framer-motion";
 import "./App.css";
 
-const API_URL = "http://localhost:5000/api/todos";
+// eslint-disable-next-line no-undef
+const API_URL = process.env.APP_URL
 
 function App() {
   const [todos, setTodos] = useState([]);

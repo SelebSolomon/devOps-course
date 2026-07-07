@@ -3,8 +3,6 @@ services:
     build: ./server
     container_name: todo-backend
     restart: always
-    # networks:
-    #   - app-network
     ports:
       - "5000:5000"
     env_file:
@@ -15,7 +13,7 @@ services:
     build: 
       context: ./client
       args:
-        - VITE_API_URL=https://16.171.25.112:5000/api
+        - VITE_API_URL=https://16.171.25.112:5000/api/todos
     container_name: todo-frontend
     restart: always
     ports:
