@@ -3,8 +3,19 @@ import axios from "axios";
 import { AnimatePresence, motion } from "framer-motion";
 import "./App.css";
 
-// eslint-disable-next-line no-undef
-const API_URL = process.env.APP_URL
+const normalizeTodos = (value) => (Array.isArray(value) ? value : []);
+
+const buildApiUrl = () => {
+  const configuredUrl = import.meta.env.VITE_API_URL?.trim();
+
+  if (!configuredUrl) return "/api/todos";
+
+  return configuredUrl.endsWith("/todos")
+    ? configuredUrl
+    : `${configuredUrl.replace(/\/$/, "")}/todos`;
+};
+
+const API_URL = buildApiUrl();
 
 function App() {
   const [todos, setTodos] = useState([]);
@@ -15,11 +26,20 @@ function App() {
   useEffect(() => {
     let ignore = false;
 
-    axios.get(API_URL).then((res) => {
-      if (ignore) return;
-      setTodos(res.data);
-      setLoading(false);
-    });
+    axios
+      .get(API_URL)
+      .then((res) => {
+        if (ignore) return;
+        setTodos(normalizeTodos(res.data));
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Error fetching todos:", err);
+        if (!ignore) {
+          setTodos([]);
+          setLoading(false);
+        }
+      });
 
     inputRef.current?.focus();
 
@@ -30,27 +50,46 @@ function App() {
 
   const addTodo = async (e) => {
     e.preventDefault();
-    if (!text.trim()) return;
-    const res = await axios.post(API_URL, { text });
-    setTodos([res.data, ...todos]);
-    setText("");
-    inputRef.current?.focus();
+    const trimmedText = text.trim();
+    if (!trimmedText) return;
+
+    try {
+      const res = await axios.post(API_URL, { text: trimmedText });
+      setTodos((prevTodos) => [res.data, ...normalizeTodos(prevTodos)]);
+      setText("");
+      inputRef.current?.focus();
+    } catch (err) {
+      console.error("Error adding todo:", err);
+    }
   };
 
   const toggleTodo = async (todo) => {
-    const res = await axios.put(`${API_URL}/${todo._id}`, {
-      completed: !todo.completed,
-    });
-    setTodos(todos.map((t) => (t._id === res.data._id ? res.data : t)));
+    try {
+      const res = await axios.put(`${API_URL}/${todo._id}`, {
+        completed: !todo.completed,
+      });
+      setTodos((prevTodos) =>
+        prevTodos.map((t) => (t._id === res.data._id ? res.data : t)),
+      );
+    } catch (err) {
+      console.error("Error updating todo:", err);
+    }
   };
 
   const deleteTodo = async (id) => {
-    await axios.delete(`${API_URL}/${id}`);
-    setTodos(todos.filter((t) => t._id !== id));
+    try {
+      await axios.delete(`${API_URL}/${id}`);
+      setTodos((prevTodos) => prevTodos.filter((t) => t._id !== id));
+    } catch (err) {
+      console.error("Error deleting todo:", err);
+    }
   };
 
-  const remaining = todos.filter((t) => !t.completed).length;
-  const progress = todos.length ? (todos.length - remaining) / todos.length : 0;
+  const todosList = normalizeTodos(todos);
+  const remaining = todosList.filter((t) => !t.completed).length;
+  const progress = todosList.length
+    ? (todosList.length - remaining) / todosList.length
+    : 0;
 
   return (
     <div className="page">
@@ -70,7 +109,7 @@ function App() {
           </motion.h1>
 
           <AnimatePresence mode="wait">
-            {!loading && todos.length > 0 && (
+            {!loading && todosList.length > 0 && (
               <motion.p
                 key={remaining === 0 ? "done" : "remaining"}
                 className="subtitle"
@@ -81,12 +120,12 @@ function App() {
               >
                 {remaining === 0
                   ? "All done! 🎉"
-                  : `${remaining} of ${todos.length} remaining`}
+                  : `${remaining} of ${todosList.length} remaining`}
               </motion.p>
             )}
           </AnimatePresence>
 
-          {todos.length > 0 && (
+          {todosList.length > 0 && (
             <div className="progress-track">
               <motion.div
                 className="progress-fill"
@@ -118,7 +157,7 @@ function App() {
           <p className="empty-state">Loading...</p>
         ) : (
           <AnimatePresence>
-            {todos.length === 0 ? (
+            {todosList.length === 0 ? (
               <motion.div
                 key="empty"
                 className="empty-state"
@@ -129,7 +168,11 @@ function App() {
                 <motion.span
                   className="empty-icon"
                   animate={{ y: [0, -8, 0] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
                 >
                   📝
                 </motion.span>
@@ -138,7 +181,7 @@ function App() {
             ) : (
               <motion.ul layout className="todo-list">
                 <AnimatePresence>
-                  {todos.map((todo) => (
+                  {todosList.map((todo) => (
                     <motion.li
                       key={todo._id}
                       layout

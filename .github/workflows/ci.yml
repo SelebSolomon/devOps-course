@@ -47,3 +47,16 @@ jobs:
 
       - name: Build frontend images
         run: docker build -t todo-frontend ./client
+
+  deploy:
+    needs: build-and-lint
+    if: github.event_name == 'push' 
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (Optional)
+        uses: actions/checkout@v3
+
+      - name: add ec2 to a known host
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
