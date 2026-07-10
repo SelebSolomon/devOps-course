@@ -73,24 +73,25 @@ jobs:
           EC2_USER: ${{ secrets.EC2_USER }}
           EC2_APP_DIR: ${{ secrets.EC2_APP_DIR }}
         run: |
-          ssh -i ec2_key.pem $EC2_USER@$EC2_HOST << EOF
-            set -e
-            cd $EC2_APP_DIR
+          echo "Runner pwd:"
+          pwd
 
-            echo $PWD
+          echo "App dir secret:"
+          echo "$EC2_APP_DIR"
 
-            git fetch --all
-            git reset --hard origin/main
+          ssh -i ec2_key.pem $EC2_USER@$EC2_HOST <<EOF
+            echo "Remote pwd before cd:"
+            pwd
 
+            echo "Remote APP_DIR:"
+            echo "$EC2_APP_DIR"
 
-            docker-compose down
-            docker-compose pull
-            docker-compose up -d --build
+            cd "$EC2_APP_DIR"
 
-            docker image prune -f
+            echo "After cd:"
+            pwd
 
-            docker compose ps
+            ls -la
 
+            git status
           EOF
-
-
