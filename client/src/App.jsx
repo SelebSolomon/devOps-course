@@ -8,7 +8,15 @@ const normalizeTodos = (value) => (Array.isArray(value) ? value : []);
 const buildApiUrl = () => {
   const configuredUrl = import.meta.env.VITE_API_URL?.trim();
 
-  if (!configuredUrl) return "/api/todos";
+  if (!configuredUrl || configuredUrl === "/") return "/api/todos";
+
+  if (configuredUrl.startsWith("/")) {
+    return configuredUrl === "/api"
+      ? "/api/todos"
+      : configuredUrl.endsWith("/todos")
+        ? configuredUrl
+        : `${configuredUrl.replace(/\/$/, "")}/todos`;
+  }
 
   return configuredUrl.endsWith("/todos")
     ? configuredUrl
