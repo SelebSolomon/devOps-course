@@ -77,6 +77,8 @@ jobs:
             set -e
             cd $EC2_APP_DIR
 
+            echo $PWD
+
             git fetch --all
             git reset --hard origin/main
 
