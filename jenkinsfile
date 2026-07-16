@@ -1,0 +1,98 @@
+pipeline {
+    agent any
+
+
+    environment {
+    FRONTEND_IMAGE = 'todo-frontend:jenkins'
+    BACKEND_IMAGE = 'todo-backend:jenkins'
+    MONGO_IMAGE = 'mongodb://mongo:27017/todo_db'
+    PORT = '5000'
+    }
+
+    stages {
+        stage('Checkout Code') {
+            steps {
+                git url: "https://github.com/SelebSolomon/devOps-course.git", branch: "main"
+            }
+        }
+
+        stage('Prepare environment') {
+            steps {
+                sh '''
+                mkdir -p server
+                cat > server/.env <<EOL
+                PORT=$PORT
+                MONGO_URI=$MONGO_IMAGE
+                EOL
+                '''
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh '''
+                    echo "Building backend Docker image..."
+                    docker build -t $BACKEND_IMAGE ./server
+
+
+                    echo "Building frontend Docker image..."
+                    docker build -t $FRONTEND_IMAGE ./client --build-arg VITE_API_URL=http://localhost:$PORT/api
+                '''
+            }
+        }
+
+        stage('Run with docker compose') {
+            steps {
+                sh '''
+                    echo "Running docker compose..."
+                    docker-compose up -d
+
+                    echo "Running containers..."
+                    docker ps
+                '''
+            }
+        }
+    }
+
+
+    //     stage('Build Frontend') {
+    //         steps {
+    //             script {
+    //                 sh 'docker build -t $FRONTEND_IMAGE ./client'
+    //             }
+    //         }
+    //     }
+
+    //     stage('Build Backend') {
+    //         steps {
+    //             script {
+    //                 sh 'docker build -t $BACKEND_IMAGE ./server'
+    //             }
+    //         }
+    //     }
+
+    //     stage('Run MongoDB') {
+    //         steps {
+    //             script {
+    //                 sh 'docker run -d --name mongo -p 27017:27017 mongo:latest'
+    //             }
+    //         }
+    //     }
+
+    //     stage('Run Backend') {
+    //         steps {
+    //             script {
+    //                 sh 'docker run -d --name todo-backend --link mongo:mongo -p $PORT:5000 $BACKEND_IMAGE'
+    //             }
+    //         }
+    //     }
+
+    //     stage('Run Frontend') {
+    //         steps {
+    //             script {
+    //                 sh 'docker run -d --name todo-frontend --link todo-backend:todo-backend -p 3000:3000 $FRONTEND_IMAGE'
+    //             }
+    //         }
+    //     }
+    // }
+}

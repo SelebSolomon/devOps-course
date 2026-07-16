@@ -1,25 +1,49 @@
 services:
+  mongo:
+    image: mongo:7
+    container_name: mongo
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - mern-network
   todo-backend:
-    build: ./server
+    build:
+      context: ./server
+      dockerfile: Dockerfile
     container_name: todo-backend
     restart: always
     ports:
       - "5000:5000"
     env_file:
       - ./server/.env
+    depends_on:
+      - mongo
+    networks:
+      - mern-network
 
   todo-frontend:
     build:
       context: ./client
       args:
         - VITE_API_URL=/api
+      dockerfile: Dockerfile
     container_name: todo-frontend
     restart: always
     ports:
       - "5173:5173"
     environment:
-      - VITE_PROXY_TARGET=http://172.23.0.2:5000
+      - VITE_PROXY_TARGET=http://todo-backend:5000
     env_file:
       - ./client/.env
     depends_on:
       - todo-backend
+    networks:
+      - mern-network
+
+volumes:
+  mongo-data:
+
+networks:
+  mern-network:
+    driver: bridge
