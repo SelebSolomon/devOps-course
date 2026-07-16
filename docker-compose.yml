@@ -8,9 +8,7 @@ services:
     networks:
       - mern-network
   todo-backend:
-    build:
-      context: ./server
-      dockerfile: Dockerfile
+    image: todo-backend:jenkins
     container_name: todo-backend
     restart: always
     ports:
@@ -23,11 +21,7 @@ services:
       - mern-network
 
   todo-frontend:
-    build:
-      context: ./client
-      args:
-        - VITE_API_URL=/api
-      dockerfile: Dockerfile
+    image: todo-frontend:jenkins
     container_name: todo-frontend
     restart: always
     ports:
