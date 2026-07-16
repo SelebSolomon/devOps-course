@@ -34,7 +34,8 @@ pipeline {
                     echo "Building backend Docker image..."
                     docker build -t $BACKEND_IMAGE ./server
 
-
+                    echo "VITE_API_URL=http://localhost:5000/api" > client/.env
+                    
                     echo "Building frontend Docker image..."
                     docker build -t $FRONTEND_IMAGE ./client --build-arg VITE_API_URL=http://localhost:$PORT/api
                 '''
